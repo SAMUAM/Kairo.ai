@@ -1,67 +1,72 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>NEXORA AI</title>
 
     <style>
         body {
             font-family: Arial, sans-serif;
-            background: #f4f4f4;
+            background: #f4f6f8;
             margin: 0;
-            padding: 0;
         }
 
         header {
             background: #111827;
             color: white;
-            padding: 25px;
+            padding: 20px;
             text-align: center;
         }
 
         .container {
             max-width: 800px;
-            margin: 40px auto;
+            margin: 30px auto;
             background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-
-        h2 {
-            color: #111827;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
         }
 
         #chat {
-            height: 300px;
+            height: 400px;
+            overflow-y: auto;
             border: 1px solid #ddd;
             padding: 15px;
-            overflow-y: auto;
+            border-radius: 8px;
             margin-bottom: 15px;
-            border-radius: 10px;
+            background: #fafafa;
+        }
+
+        .user, .ai {
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 8px;
         }
 
         .user {
-            text-align: right;
-            margin: 10px;
+            background: #e0e7ff;
         }
 
         .ai {
-            text-align: left;
-            margin: 10px;
+            background: #dcfce7;
         }
 
         input {
-            width: 75%;
+            width: calc(100% - 110px);
             padding: 12px;
+            box-sizing: border-box;
             border: 1px solid #ccc;
             border-radius: 8px;
         }
 
         button {
-            padding: 12px 20px;
-            background: #111827;
+            width: 90px;
+            padding: 12px;
+            margin-left: 10px;
+            background: #2563eb;
             color: white;
             border: none;
             border-radius: 8px;
@@ -69,70 +74,193 @@
         }
 
         button:hover {
-            background: #374151;
+            background: #1d4ed8;
         }
     </style>
 </head>
 
 <body>
 
-<header>
-    <h1>NEXORA AI</h1>
-    <p>Asistente inteligente para empresas</p>
-</header>
+    <header>
+        <h1>NEXORA AI</h1>
+        <p>Asistente inteligente para empresas</p>
+    </header>
 
-<div class="container">
+    <div class="container">
 
-    <h2>Asistente empresarial</h2>
+        <h2>Asistente empresarial</h2>
 
-    <div id="chat">
-        <div class="ai">
-            <strong>NEXORA AI:</strong> Hola. ¿En qué puedo ayudarte?
+        <div id="chat">
+            <div class="ai">
+                <strong>NEXORA AI:</strong>
+                Hola. Soy NEXORA AI. Puedo ayudarte con información sobre nuestros productos y su stock.
+            </div>
         </div>
+
+        <input
+            id="userInput"
+            type="text"
+            placeholder="Escribe tu pregunta..."
+            onkeydown="if(event.key === 'Enter') sendMessage()"
+        >
+
+        <button onclick="sendMessage()">Enviar</button>
+
     </div>
 
-    <input 
-        type="text" 
-        id="userInput" 
-        placeholder="Escribe tu pregunta..."
-    >
+    <script>
 
-    <button onclick="sendMessage()">Enviar</button>
+        // INFORMACIÓN DE LA EMPRESA
 
-</div>
+        const productos = [
 
-<script>
+            {
+                nombre: "Portátil NEXORA Pro",
+                precio: 899,
+                stock: 12
+            },
 
-function sendMessage() {
+            {
+                nombre: "NEXORA Phone X",
+                precio: 699,
+                stock: 25
+            },
 
-    const input = document.getElementById("userInput");
-    const chat = document.getElementById("chat");
+            {
+                nombre: "Auriculares NEXORA Buds",
+                precio: 149,
+                stock: 40
+            }
 
-    const message = input.value;
+        ];
 
-    if (message.trim() === "") {
-        return;
-    }
 
-    chat.innerHTML += `
-        <div class="user">
-            <strong>Tú:</strong> ${message}
-        </div>
-    `;
+        // FUNCIÓN PRINCIPAL DEL CHAT
 
-    chat.innerHTML += `
-        <div class="ai">
-            <strong>NEXORA AI:</strong> Gracias por tu pregunta. 
-            En la siguiente versión aprenderé a utilizar información de la empresa.
-        </div>
-    `;
+        function sendMessage() {
 
-    input.value = "";
+            const input = document.getElementById("userInput");
+            const chat = document.getElementById("chat");
 
-    chat.scrollTop = chat.scrollHeight;
-}
+            const pregunta = input.value.trim();
+            const mensaje = pregunta.toLowerCase();
 
-</script>
+            if (pregunta === "") {
+                return;
+            }
+
+
+            // Mostrar pregunta del usuario
+
+            chat.innerHTML += `
+                <div class="user">
+                    <strong>Tú:</strong> ${pregunta}
+                </div>
+            `;
+
+
+            let respuesta = "";
+
+
+            // SALUDO
+
+            if (mensaje.includes("hola")) {
+
+                respuesta =
+                    "¡Hola! Soy NEXORA AI. ¿En qué puedo ayudarte?";
+
+            }
+
+
+            // MOSTRAR PRODUCTOS
+
+            else if (
+                mensaje.includes("producto") ||
+                mensaje.includes("productos")
+            ) {
+
+                respuesta =
+                    "Estos son los productos disponibles:<br><br>";
+
+                productos.forEach(producto => {
+
+                    respuesta +=
+                        `<strong>${producto.nombre}</strong>
+                        — ${producto.precio}€
+                        — Stock: ${producto.stock} unidades<br>`;
+
+                });
+
+            }
+
+
+            // CONSULTAR STOCK
+
+            else if (mensaje.includes("stock")) {
+
+                const productoEncontrado = productos.find(producto =>
+                    mensaje.includes(producto.nombre.toLowerCase())
+                );
+
+
+                if (productoEncontrado) {
+
+                    respuesta =
+                        `El stock de <strong>${productoEncontrado.nombre}</strong>
+                        es de <strong>${productoEncontrado.stock} unidades</strong>.`;
+
+                } else {
+
+                    respuesta =
+                        "Puedo consultar el stock. Indícame el nombre del producto.";
+
+                }
+
+            }
+
+
+            // PRECIO
+
+            else if (mensaje.includes("precio")) {
+
+                respuesta =
+                    "Puedo ayudarte a consultar los precios de nuestros productos.";
+
+            }
+
+
+            // SI NO SABE LA RESPUESTA
+
+            else {
+
+                respuesta =
+                    "Todavía no conozco la respuesta a esa pregunta. Prueba preguntando por nuestros productos o por el stock.";
+
+            }
+
+
+            // MOSTRAR RESPUESTA DE LA IA
+
+            chat.innerHTML += `
+                <div class="ai">
+                    <strong>NEXORA AI:</strong> ${respuesta}
+                </div>
+            `;
+
+
+            // Limpiar caja de texto
+
+            input.value = "";
+
+
+            // Bajar automáticamente al último mensaje
+
+            chat.scrollTop = chat.scrollHeight;
+
+        }
+
+    </script>
 
 </body>
+
 </html>
