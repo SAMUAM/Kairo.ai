@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXORA AI</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background: #111827;
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            color: #111827;
+        }
+
+        #chat {
+            height: 300px;
+            border: 1px solid #ddd;
+            padding: 15px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            border-radius: 10px;
+        }
+
+        .user {
+            text-align: right;
+            margin: 10px;
+        }
+
+        .ai {
+            text-align: left;
+            margin: 10px;
+        }
+
+        input {
+            width: 75%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+
+        button {
+            padding: 12px 20px;
+            background: #111827;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #374151;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>NEXORA AI</h1>
+    <p>Asistente inteligente para empresas</p>
+</header>
+
+<div class="container">
+
+    <h2>Asistente empresarial</h2>
+
+    <div id="chat">
+        <div class="ai">
+            <strong>NEXORA AI:</strong> Hola. ¿En qué puedo ayudarte?
+        </div>
+    </div>
+
+    <input 
+        type="text" 
+        id="userInput" 
+        placeholder="Escribe tu pregunta..."
+    >
+
+    <button onclick="sendMessage()">Enviar</button>
+
+</div>
+
+<script>
+
+function sendMessage() {
+
+    const input = document.getElementById("userInput");
+    const chat = document.getElementById("chat");
+
+    const message = input.value;
+
+    if (message.trim() === "") {
+        return;
+    }
+
+    chat.innerHTML += `
+        <div class="user">
+            <strong>Tú:</strong> ${message}
+        </div>
+    `;
+
+    chat.innerHTML += `
+        <div class="ai">
+            <strong>NEXORA AI:</strong> Gracias por tu pregunta. 
+            En la siguiente versión aprenderé a utilizar información de la empresa.
+        </div>
+    `;
+
+    input.value = "";
+
+    chat.scrollTop = chat.scrollHeight;
+}
+
+</script>
+
+</body>
+</html>
