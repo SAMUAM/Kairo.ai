@@ -162,22 +162,37 @@
             let respuesta = "";
 
 
-            // SALUDO
+           // PRODUCTOS
 
-            if (mensaje.includes("hola")) {
+if (
+    mensaje.includes("producto") ||
+    mensaje.includes("productos")
+) {
 
-                respuesta =
-                    "¡Hola! Soy NEXORA AI. ¿En qué puedo ayudarte?";
+    respuesta =
+        "¡Claro! Estos son nuestros productos:<br><br>";
 
-            }
+    productos.forEach(producto => {
+
+        respuesta += `
+            <strong>${producto.nombre}</strong><br>
+            Precio: ${producto.precio}€<br>
+            Stock: ${producto.stock} unidades<br><br>
+        `;
+
+    });
+
+}
 
 
-            // MOSTRAR TODOS LOS PRODUCTOS
+// SALUDO
 
-            else if (
-                mensaje.includes("producto") ||
-                mensaje.includes("productos")
-            ) {
+else if (mensaje.includes("hola")) {
+
+    respuesta =
+        "¡Hola! Soy NEXORA AI. ¿En qué puedo ayudarte?";
+
+}
 
                 respuesta =
                     "Estos son nuestros productos:<br><br>";
