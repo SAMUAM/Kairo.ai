@@ -1,322 +1,412 @@
-<!DOCTYPE html>
-<html lang="es">
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+dotenv.config();
 
-    <title>NEXORA AI</title>
+const app = express();
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f6f8;
-            margin: 0;
-        }
+app.use(cors());
+app.use(express.json());
 
-        header {
-            background: #111827;
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
+/*
+========================================================
+NEXORA AI
+Sistema de productos + stock + precios + memoria
+========================================================
+*/
 
-        .container {
-            max-width: 800px;
-            margin: 30px auto;
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        }
+// ------------------------------------------------------
+// PRODUCTOS
+// ------------------------------------------------------
 
-        #chat {
-            height: 400px;
-            overflow-y: auto;
-            border: 1px solid #ddd;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            background: #fafafa;
-        }
+const products = [
+  {
+    id: "phone-x",
+    name: "NEXORA Phone X",
+    price: 899,
+    stock: 25,
+    currency: "EUR",
+    description: "Smartphone premium de NEXORA."
+  },
+  {
+    id: "phone-pro",
+    name: "NEXORA Phone Pro",
+    price: 1199,
+    stock: 15,
+    currency: "EUR",
+    description: "Smartphone premium avanzado."
+  },
+  {
+    id: "laptop-pro",
+    name: "Portátil NEXORA Pro",
+    price: 1299,
+    stock: 12,
+    currency: "EUR",
+    description: "Portátil profesional de alto rendimiento."
+  },
+  {
+    id: "tablet-x",
+    name: "NEXORA Tablet X",
+    price: 699,
+    stock: 20,
+    currency: "EUR",
+    description: "Tablet potente y ligera."
+  }
+];
 
-        .user, .ai {
-            padding: 10px;
-            margin: 8px 0;
-            border-radius: 8px;
-        }
+// ------------------------------------------------------
+// MEMORIA DE CONVERSACIONES
+// ------------------------------------------------------
 
-        .user {
-            background: #e0e7ff;
-        }
+const conversations = new Map();
 
-        .ai {
-            background: #dcfce7;
-        }
+function getConversation(conversationId) {
+  if (!conversations.has(conversationId)) {
+    conversations.set(conversationId, {
+      messages: [],
+      currentProduct: null
+    });
+  }
 
-        input {
-            width: calc(100% - 110px);
-            padding: 12px;
-            box-sizing: border-box;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-        }
+  return conversations.get(conversationId);
+}
 
-        button {
-            width: 90px;
-            padding: 12px;
-            margin-left: 10px;
-            background: #2563eb;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-        }
+// ------------------------------------------------------
+// BUSCAR PRODUCTO
+// ------------------------------------------------------
 
-        button:hover {
-            background: #1d4ed8;
-        }
-    </style>
-</head>
+function findProduct(text) {
+  if (!text) return null;
 
-<body>
+  const normalizedText = text.toLowerCase();
 
-    <header>
-        <h1>NEXORA AI</h1>
-        <p>Asistente inteligente para empresas</p>
-    </header>
+  return products.find(product => {
+    const productName = product.name.toLowerCase();
 
-    <div class="container">
+    return (
+      normalizedText.includes(productName) ||
+      normalizedText.includes(product.id)
+    );
+  });
+}
 
-        <h2>Asistente empresarial</h2>
+// ------------------------------------------------------
+// DETECTAR SI HABLA DEL PRODUCTO ANTERIOR
+// ------------------------------------------------------
 
-        <div id="chat">
-            <div class="ai">
-                <strong>NEXORA AI:</strong>
-                Hola. Soy NEXORA AI. Puedo ayudarte con productos, precios y stock.
-            </div>
-        </div>
+function refersToPreviousProduct(text) {
+  const normalized = text.toLowerCase();
 
-        <input
-            id="userInput"
-            type="text"
-            placeholder="Escribe tu pregunta..."
-            onkeydown="if(event.key === 'Enter') sendMessage()"
-        >
+  const references = [
+    "su",
+    "sus",
+    "ese",
+    "esa",
+    "ese producto",
+    "ese portátil",
+    "ese movil",
+    "ese móvil",
+    "ese teléfono",
+    "el producto",
+    "el portátil",
+    "el movil",
+    "el móvil",
+    "el teléfono",
+    "cuanto cuesta",
+    "cuánto cuesta",
+    "precio",
+    "stock",
+    "unidades"
+  ];
 
-        <button onclick="sendMessage()">Enviar</button>
+  return references.some(reference =>
+    normalized.includes(reference)
+  );
+}
 
-    </div>
+// ------------------------------------------------------
+// DETECTAR INTENCIÓN
+// ------------------------------------------------------
 
-    <script>
+function detectIntent(text) {
+  const normalized = text.toLowerCase();
 
-        // INFORMACIÓN DE LOS PRODUCTOS
+  if (
+    normalized.includes("precio") ||
+    normalized.includes("cuánto cuesta") ||
+    normalized.includes("cuanto cuesta") ||
+    normalized.includes("coste") ||
+    normalized.includes("vale") ||
+    normalized.includes("cuánto vale") ||
+    normalized.includes("cuanto vale")
+  ) {
+    return "price";
+  }
 
-        const productos = [
+  if (
+    normalized.includes("stock") ||
+    normalized.includes("unidades") ||
+    normalized.includes("disponible") ||
+    normalized.includes("disponibilidad") ||
+    normalized.includes("cuántos quedan") ||
+    normalized.includes("cuantos quedan")
+  ) {
+    return "stock";
+  }
 
-            {
-                nombre: "Portátil NEXORA Pro",
-                precio: 899,
-                stock: 12
-            },
+  if (
+    normalized.includes("productos") ||
+    normalized.includes("qué tenéis") ||
+    normalized.includes("que teneis") ||
+    normalized.includes("qué tienen") ||
+    normalized.includes("catalogo") ||
+    normalized.includes("catálogo")
+  ) {
+    return "products";
+  }
 
-            {
-                nombre: "NEXORA Phone X",
-                precio: 699,
-                stock: 25
-            },
+  return "general";
+}
 
-            {
-                nombre: "Auriculares NEXORA Buds",
-                precio: 149,
-                stock: 40
-            }
+// ------------------------------------------------------
+// RESPUESTA SOBRE PRODUCTOS
+// ------------------------------------------------------
 
-        ];
+function listProducts() {
+  return products
+    .map(
+      product =>
+        `• ${product.name} — ${product.price} € — ${product.stock} unidades disponibles`
+    )
+    .join("\n");
+}
 
+// ------------------------------------------------------
+// PROCESAR MENSAJE
+// ------------------------------------------------------
 
-        // FUNCIÓN DEL CHAT
+function processMessage(message, conversationId) {
+  const conversation = getConversation(conversationId);
 
-        function sendMessage() {
+  const productFromMessage = findProduct(message);
 
-            const input = document.getElementById("userInput");
-            const chat = document.getElementById("chat");
+  // ----------------------------------------------
+  // Si menciona un producto explícitamente
+  // ----------------------------------------------
 
-            const pregunta = input.value.trim();
-            const mensaje = pregunta.toLowerCase();
+  if (productFromMessage) {
+    conversation.currentProduct = productFromMessage;
+  }
 
-            if (pregunta === "") {
-                return;
-            }
+  // ----------------------------------------------
+  // Producto actual
+  // ----------------------------------------------
 
+  let product = productFromMessage || conversation.currentProduct;
 
-            // Mostrar mensaje del usuario
+  const intent = detectIntent(message);
 
-            chat.innerHTML += `
-                <div class="user">
-                    <strong>Tú:</strong> ${pregunta}
-                </div>
-            `;
+  // ----------------------------------------------
+  // STOCK
+  // ----------------------------------------------
 
+  if (intent === "stock") {
+    if (!product) {
+      return "Claro. ¿De qué producto quieres consultar el stock?";
+    }
 
-            let respuesta = "";
+    return `El stock de ${product.name} es de ${product.stock} unidades.`;
+  }
 
+  // ----------------------------------------------
+  // PRECIO
+  // ----------------------------------------------
 
-           // PRODUCTOS
+  if (intent === "price") {
+    if (!product) {
+      return "Claro. ¿De qué producto quieres consultar el precio?";
+    }
 
-if (
-    mensaje.includes("producto") ||
-    mensaje.includes("productos")
-) {
+    return `El precio de ${product.name} es de ${product.price} €.`;
+  }
 
-    respuesta =
-        "¡Claro! Estos son nuestros productos:<br><br>";
+  // ----------------------------------------------
+  // LISTA DE PRODUCTOS
+  // ----------------------------------------------
 
-    productos.forEach(producto => {
+  if (intent === "products") {
+    return `Actualmente tenemos estos productos:\n\n${listProducts()}`;
+  }
 
-        respuesta += `
-            <strong>${producto.nombre}</strong><br>
-            Precio: ${producto.precio}€<br>
-            Stock: ${producto.stock} unidades<br><br>
-        `;
+  // ----------------------------------------------
+  // SALUDOS
+  // ----------------------------------------------
 
+  const normalized = message.toLowerCase();
+
+  if (
+    normalized === "hola" ||
+    normalized.includes("hola buenas") ||
+    normalized.includes("buenas") ||
+    normalized.includes("hey")
+  ) {
+    return "¡Hola! Soy NEXORA AI. ¿En qué puedo ayudarte?";
+  }
+
+  // ----------------------------------------------
+  // RESPUESTA GENERAL
+  // ----------------------------------------------
+
+  if (product) {
+    return `Claro. Estás consultando sobre ${product.name}. Puedes preguntarme por su precio o stock.`;
+  }
+
+  return "Puedo ayudarte con nuestros productos, precios y stock. Por ejemplo: «¿Cuál es el precio del NEXORA Phone X?»";
+}
+
+// ------------------------------------------------------
+// API
+// ------------------------------------------------------
+
+app.post("/chat", (req, res) => {
+  try {
+    const { message, conversationId = "default" } = req.body;
+
+    if (!message || typeof message !== "string") {
+      return res.status(400).json({
+        error: "El campo 'message' es obligatorio."
+      });
+    }
+
+    const conversation = getConversation(conversationId);
+
+    // Guardamos el mensaje del usuario
+    conversation.messages.push({
+      role: "user",
+      content: message
     });
 
-}
+    // Generamos respuesta
+    const response = processMessage(
+      message,
+      conversationId
+    );
 
+    // Guardamos respuesta de NEXORA
+    conversation.messages.push({
+      role: "assistant",
+      content: response
+    });
 
-// SALUDO
+    res.json({
+      success: true,
+      response,
+      conversationId,
+      currentProduct: conversation.currentProduct
+        ? conversation.currentProduct.name
+        : null
+    });
 
-else if (mensaje.includes("hola")) {
+  } catch (error) {
+    console.error("Error:", error);
 
-    respuesta =
-        "¡Hola! Soy NEXORA AI. ¿En qué puedo ayudarte?";
+    res.status(500).json({
+      success: false,
+      error: "Ha ocurrido un error interno."
+    });
+  }
+});
 
-}
+// ------------------------------------------------------
+// OBTENER PRODUCTOS
+// ------------------------------------------------------
 
-                respuesta =
-                    "Estos son nuestros productos:<br><br>";
+app.get("/products", (req, res) => {
+  res.json({
+    success: true,
+    products
+  });
+});
 
-                productos.forEach(producto => {
+// ------------------------------------------------------
+// OBTENER STOCK
+// ------------------------------------------------------
 
-                    respuesta += `
-                        <strong>${producto.nombre}</strong><br>
-                        Precio: ${producto.precio}€<br>
-                        Stock: ${producto.stock} unidades<br><br>
-                    `;
+app.get("/products/:id/stock", (req, res) => {
+  const product = products.find(
+    p => p.id === req.params.id
+  );
 
-                });
+  if (!product) {
+    return res.status(404).json({
+      error: "Producto no encontrado."
+    });
+  }
 
-            }
+  res.json({
+    product: product.name,
+    stock: product.stock
+  });
+});
 
+// ------------------------------------------------------
+// OBTENER PRECIO
+// ------------------------------------------------------
 
-            // CONSULTAR STOCK
+app.get("/products/:id/price", (req, res) => {
+  const product = products.find(
+    p => p.id === req.params.id
+  );
 
-            else if (mensaje.includes("stock")) {
+  if (!product) {
+    return res.status(404).json({
+      error: "Producto no encontrado."
+    });
+  }
 
-                let productoEncontrado = productos.find(producto =>
-                    mensaje.includes(producto.nombre.toLowerCase())
-                );
+  res.json({
+    product: product.name,
+    price: product.price,
+    currency: product.currency
+  });
+});
 
+// ------------------------------------------------------
+// LIMPIAR CONVERSACIÓN
+// ------------------------------------------------------
 
-                if (productoEncontrado) {
+app.delete("/conversation/:id", (req, res) => {
+  conversations.delete(req.params.id);
 
-                    respuesta =
-                        `El stock de <strong>${productoEncontrado.nombre}</strong>
-                        es de <strong>${productoEncontrado.stock} unidades</strong>.`;
+  res.json({
+    success: true,
+    message: "Conversación eliminada."
+  });
+});
 
-                } else {
+// ------------------------------------------------------
+// SERVIDOR
+// ------------------------------------------------------
 
-                    respuesta =
-                        "Actualmente tenemos:<br><br>";
+const PORT = process.env.PORT || 3000;
 
-                    productos.forEach(producto => {
+app.listen(PORT, () => {
+  console.log(`
+========================================
+       NEXORA AI ONLINE
+========================================
 
-                        respuesta +=
-                            `<strong>${producto.nombre}</strong>:
-                            ${producto.stock} unidades<br>`;
+Servidor: http://localhost:${PORT}
 
-                    });
+Endpoints:
 
-                }
+POST   /chat
+GET    /products
+GET    /products/:id/stock
+GET    /products/:id/price
+DELETE /conversation/:id
 
-            }
-
-
-            // CONSULTAR PRECIO
-
-            else if (mensaje.includes("precio")) {
-
-                let productoEncontrado = productos.find(producto =>
-                    mensaje.includes(producto.nombre.toLowerCase())
-                );
-
-
-                if (productoEncontrado) {
-
-                    respuesta =
-                        `El precio del <strong>${productoEncontrado.nombre}</strong>
-                        es de <strong>${productoEncontrado.precio}€</strong>.`;
-
-                } else {
-
-                    respuesta =
-                        "Actualmente tenemos estos precios:<br><br>";
-
-                    productos.forEach(producto => {
-
-                        respuesta +=
-                            `<strong>${producto.nombre}</strong>:
-                            ${producto.precio}€<br>`;
-
-                    });
-
-                }
-
-            }
-
-
-            // PREGUNTAS SOBRE NEXORA
-
-            else if (mensaje.includes("nexora")) {
-
-                respuesta =
-                    "NEXORA es una empresa tecnológica ficticia especializada en productos electrónicos.";
-
-            }
-
-
-            // RESPUESTA POR DEFECTO
-
-            else {
-
-                respuesta =
-                    "Todavía no conozco la respuesta a esa pregunta. Prueba preguntando por productos, precios o stock.";
-
-            }
-
-
-            // Mostrar respuesta
-
-            chat.innerHTML += `
-                <div class="ai">
-                    <strong>NEXORA AI:</strong> ${respuesta}
-                </div>
-            `;
-
-
-            // Limpiar el cuadro
-
-            input.value = "";
-
-            // Bajar al último mensaje
-
-            chat.scrollTop = chat.scrollHeight;
-
-        }
-
-    </script>
-
-</body>
-
-</html>
+========================================
+`);
+});
