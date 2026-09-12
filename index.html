@@ -93,7 +93,7 @@
         <div id="chat">
             <div class="ai">
                 <strong>NEXORA AI:</strong>
-                Hola. Soy NEXORA AI. Puedo ayudarte con información sobre nuestros productos y su stock.
+                Hola. Soy NEXORA AI. Puedo ayudarte con productos, precios y stock.
             </div>
         </div>
 
@@ -110,7 +110,7 @@
 
     <script>
 
-        // INFORMACIÓN DE LA EMPRESA
+        // INFORMACIÓN DE LOS PRODUCTOS
 
         const productos = [
 
@@ -135,7 +135,7 @@
         ];
 
 
-        // FUNCIÓN PRINCIPAL DEL CHAT
+        // FUNCIÓN DEL CHAT
 
         function sendMessage() {
 
@@ -150,7 +150,7 @@
             }
 
 
-            // Mostrar pregunta del usuario
+            // Mostrar mensaje del usuario
 
             chat.innerHTML += `
                 <div class="user">
@@ -172,7 +172,7 @@
             }
 
 
-            // MOSTRAR PRODUCTOS
+            // MOSTRAR TODOS LOS PRODUCTOS
 
             else if (
                 mensaje.includes("producto") ||
@@ -180,14 +180,15 @@
             ) {
 
                 respuesta =
-                    "Estos son los productos disponibles:<br><br>";
+                    "Estos son nuestros productos:<br><br>";
 
                 productos.forEach(producto => {
 
-                    respuesta +=
-                        `<strong>${producto.nombre}</strong>
-                        — ${producto.precio}€
-                        — Stock: ${producto.stock} unidades<br>`;
+                    respuesta += `
+                        <strong>${producto.nombre}</strong><br>
+                        Precio: ${producto.precio}€<br>
+                        Stock: ${producto.stock} unidades<br><br>
+                    `;
 
                 });
 
@@ -198,7 +199,7 @@
 
             else if (mensaje.includes("stock")) {
 
-                const productoEncontrado = productos.find(producto =>
+                let productoEncontrado = productos.find(producto =>
                     mensaje.includes(producto.nombre.toLowerCase())
                 );
 
@@ -212,34 +213,75 @@
                 } else {
 
                     respuesta =
-                        "Puedo consultar el stock. Indícame el nombre del producto.";
+                        "Actualmente tenemos:<br><br>";
+
+                    productos.forEach(producto => {
+
+                        respuesta +=
+                            `<strong>${producto.nombre}</strong>:
+                            ${producto.stock} unidades<br>`;
+
+                    });
 
                 }
 
             }
 
 
-            // PRECIO
+            // CONSULTAR PRECIO
 
             else if (mensaje.includes("precio")) {
 
-                respuesta =
-                    "Puedo ayudarte a consultar los precios de nuestros productos.";
+                let productoEncontrado = productos.find(producto =>
+                    mensaje.includes(producto.nombre.toLowerCase())
+                );
+
+
+                if (productoEncontrado) {
+
+                    respuesta =
+                        `El precio del <strong>${productoEncontrado.nombre}</strong>
+                        es de <strong>${productoEncontrado.precio}€</strong>.`;
+
+                } else {
+
+                    respuesta =
+                        "Actualmente tenemos estos precios:<br><br>";
+
+                    productos.forEach(producto => {
+
+                        respuesta +=
+                            `<strong>${producto.nombre}</strong>:
+                            ${producto.precio}€<br>`;
+
+                    });
+
+                }
 
             }
 
 
-            // SI NO SABE LA RESPUESTA
+            // PREGUNTAS SOBRE NEXORA
+
+            else if (mensaje.includes("nexora")) {
+
+                respuesta =
+                    "NEXORA es una empresa tecnológica ficticia especializada en productos electrónicos.";
+
+            }
+
+
+            // RESPUESTA POR DEFECTO
 
             else {
 
                 respuesta =
-                    "Todavía no conozco la respuesta a esa pregunta. Prueba preguntando por nuestros productos o por el stock.";
+                    "Todavía no conozco la respuesta a esa pregunta. Prueba preguntando por productos, precios o stock.";
 
             }
 
 
-            // MOSTRAR RESPUESTA DE LA IA
+            // Mostrar respuesta
 
             chat.innerHTML += `
                 <div class="ai">
@@ -248,12 +290,11 @@
             `;
 
 
-            // Limpiar caja de texto
+            // Limpiar el cuadro
 
             input.value = "";
 
-
-            // Bajar automáticamente al último mensaje
+            // Bajar al último mensaje
 
             chat.scrollTop = chat.scrollHeight;
 
